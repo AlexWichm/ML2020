@@ -209,12 +209,12 @@ class Node:
 		@param indices: list of indices of the chosen subset from the given complete dataset
 			If set to None the entire dataset is used. Default value: indices = None
 		"""
-		
+		#print("max_depth: " + str(max_depth))
 		#define max_depth
 		max_depth = max_depth if max_depth > 0 else sys.maxsize
 		
 		#Create subset of the data if indices are given
-		
+		#print("max_depth: " + str(max_depth))
 		data = data if indices == None else data[indices]
 			
 		#Check if data is pure
@@ -433,7 +433,7 @@ def task1(data, class_label, seed, ratio, attributes, maxD = -1):
 	train = np.array(train)
 	
 	
-	return get_accuracy(class_label, test, train, attributes, maxD = -1)
+	return get_accuracy(class_label, test, train, attributes, maxD)
 
 def task2(data, class_label, ratio, attributes, n, maxD = -1):
 	
@@ -496,7 +496,9 @@ data = np.array(data)
 #print('Data training\n',data_training)
 #print('Data testing\n',data_testing)
 
-
+#tree = DecisionTree()
+#tree.trainModel(data_training, attributes, class_label, 1)
+#tree.print_tree()
 
 
 #task1(data, class_label, 23, 0.5, attributes)
