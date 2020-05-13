@@ -363,6 +363,27 @@ class DecisionTree:
 		else:
 			return 0
 
+			def junk(data, class_label, seed, ratio):	
+	random.seed(seed)
+	size_data = len(data)
+	train = []
+	test = []
+	n = int(np.floor(size_data * ratio)) # number of datasets in train
+	index =  random.sample(range(1, size_data), n)
+	split = [item for item in [0] for i in range(size_data)]
+
+	for i in index:
+		split[i]=1
+	
+	count = 0
+	for i in range(0,len(data)): #splitting data in test and train data
+		if split[i]:
+			train.append(data[i])
+			count+=1
+		else:
+			test.append(data[i])
+	split_list = [ test, train ]
+	return split_list #returns list of indeces where 0 is test and 1 is training data 
 
 
 

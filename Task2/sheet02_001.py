@@ -4,6 +4,7 @@ import os
 import scipy.io.arff as arff
 
 import random
+import pandas
 
 def parser(path):
 	"""
@@ -318,17 +319,17 @@ class DecisionTree:
 		self.root = Node()
 			  
 		
-	def trainModel(self, data, attributes, class_label):
+	def trainModel(self, data, attributes, class_label, max_depth=-1):
 		"""
 		function to train the model using a given dataset
 		
 		@param data: array containing the data with their labels
 		@param attributes: list of all attributes from which the optmial one should be selected
 		"""
-		self.trainModelOnSubset(data, attributes, class_label)
+		self.trainModelOnSubset(data, attributes, class_label, max_depth)
 		
 		
-	def trainModelOnSubset(self, data, attributes, class_label, indices=None, startNode = None):
+	def trainModelOnSubset(self, data, attributes, class_label, indices=None, startNode = None , max_depth=-1):
 		"""
 		train a certain part of the tree starting with the given startNode based on a subset of the data indicated by the indices array
 		
@@ -369,8 +370,6 @@ class DecisionTree:
 		return self.root.get_leaf(data)
 
 
-
-
 	
 def splitData(data, class_label, seed, ratio):
 	"""
@@ -384,26 +383,13 @@ def splitData(data, class_label, seed, ratio):
 	@return split_list containing the list of training and test data and their labels
 	"""
 	
-	random.seed(seed)
-	size_data = len(data)
-	train = []
-	test = []
-	n = int(np.floor(size_data * ratio)) # number of datasets in train
-	index =  random.sample(range(1, size_data), n)
-	split = [item for item in [0] for i in range(size_data)]
-
-	for i in index:
-		split[i]=1
+	data = pandas.DataFrame(data, index = range(0,len(data)))
 	
-	count = 0
-	for i in range(0,len(data)): #splitting data in test and train data
-		if split[i]:
-			train.append(data[i])
-			count+=1
-		else:
-			test.append(data[i])
-	split_list = [ test, train ]
-	return split_list #returns list of indeces where 0 is test and 1 is training data 
+	split_list = []
+	split_list.append(data.sample(frac=ratio,random_state=seed))
+	split_list.append(data.drop(split_list[0].index))
+	
+	return split_list
 
 
 def get_accuracy(class_label, test, train, attributes):
@@ -418,25 +404,21 @@ def get_accuracy(class_label, test, train, attributes):
 		if check == i.get(class_label.get("name")):
 			counter +=1
 	
-	accuracy = counter/len(data_testing)	
+	accuracy = counter/len(test)	
 	
 	return accuracy
-	
 
-def get_stats(accuracies):
-	
-	stats=[]
 	
 
 def task1(data, class_label, seed, ratio, attributes): 
 	
-	split = splitData(data, class_label, seed, ratio)
-	
-	test = split[0]
-	train = split[1]
-	
-	test = np.array(train)
-	train = np.array(test)
+	train, test = splitData(data, class_label, seed, ratio)
+
+	test =  np.concatenate(test.values)
+	train = np.concatenate(train.values)
+
+	test = np.array(test)
+	train = np.array(train)
 	
 	
 	return get_accuracy(class_label, test, train, attributes)
@@ -451,17 +433,20 @@ def task2(data, class_label, ratio, attributes, n):
 	for i in seeed:
 		accuracies.append(task1(data, class_label, i, ratio, attributes))
 	
-	print(accuracies)
+	print("mean: " + str(np.mean(accuracies)))
+	print("std: " + str(np.std(accuracies)))
 
+def task3(data, class_label, attributes):
+	
+	ratios = [ 0.5, 2/3, 0.75, 0.9 ]
+	
+	for i in ratios:
+		print("\nRatio: " + str(i))
+		task2(data, class_label, i, attributes, 10)
+	
+	
 	
 
-
-
-
-
-		
-		
-#Task 6: test on dataset
 path = 'car.arff'
 data_arff = parser(path)
 
@@ -498,5 +483,5 @@ data = np.array(data)
 
 
 #task1(data, class_label, 23, 0.5, attributes)
-print(task2(data, class_label, 0.25, attributes, 100))
-
+#task2(data, class_label, 0.25, attributes, 10)
+task3(data, class_label, attributes)
