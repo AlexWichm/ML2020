@@ -5,6 +5,7 @@ import scipy.io.arff as arff
 
 import random
 import pandas
+import sys
 
 def parser(path):
 	"""
@@ -188,7 +189,7 @@ class Node:
 	contain the structure of a decision tree: it has either subnodes associated with the corresponding attribute values or is a leaf node. 
 	To set the arributes or leaf value use functions, do not access the parameters directly!
 	"""
-	def __init__(self):
+	def __init__(self, depth = 0):
 		#Parameters for nodes
 		self.attribute_name = None
 		self.descendants  = {}
@@ -196,8 +197,10 @@ class Node:
 		#Parameters for leafs
 		self.leaf_value = None
 		
+		#Depth
+		self.depth = depth
 		
-	def trainNode(self, data, attributes, class_label, indices=None):
+	def trainNode(self, data, attributes, class_label, indices=None, max_depth=-1):
 		"""
 		ID3 based algorithm to find the optimal attribtue
 			
@@ -206,9 +209,13 @@ class Node:
 		@param indices: list of indices of the chosen subset from the given complete dataset
 			If set to None the entire dataset is used. Default value: indices = None
 		"""
+		
+		#define max_depth
+		max_depth = max_depth if max_depth > 0 else sys.maxsize
+		
 		#Create subset of the data if indices are given
-		if indices is not None:
-			data = data[indices]
+		
+		data = data if indices == None else data[indices]
 			
 		#Check if data is pure
 		data_classLabels = []
@@ -221,6 +228,10 @@ class Node:
 			
 		#If no attributes are given on which to optimize, get most common class label of data
 		elif len(attributes) == 0:
+			self.set_leafNode(get_mostCommonClassLabel(data, class_label))
+		
+		#if max_depth is reached, stop building and get most common class label of data
+		elif self.depth == max_depth-1:
 			self.set_leafNode(get_mostCommonClassLabel(data, class_label))
 			
 		else:
@@ -240,14 +251,14 @@ class Node:
 				
 				#If subset is empty set node to leaf node with common class label as leaf value
 				if len(subset) == 0:
-					node = Node()
+					node = Node(self.depth + 1)
 					node.set_leafNode(get_mostCommonClassLabel(data, class_label))
 					self.descendants.update({val : node})
 					
 				#If subset is not empty, add a node and run the optimization
 				else:
-					node = Node()
-					node.trainNode(subset, attributes, class_label)
+					node = Node(self.depth + 1)
+					node.trainNode(subset, attributes, class_label, None, max_depth)
 					self.descendants.update({val : node})
 					
 			
@@ -326,10 +337,11 @@ class DecisionTree:
 		@param data: array containing the data with their labels
 		@param attributes: list of all attributes from which the optmial one should be selected
 		"""
-		self.trainModelOnSubset(data, attributes, class_label, max_depth)
+		index = None
+		self.trainModelOnSubset(data, attributes, class_label, index, self.root ,max_depth)
 		
 		
-	def trainModelOnSubset(self, data, attributes, class_label, indices=None, startNode = None , max_depth=-1):
+	def trainModelOnSubset(self, data, attributes, class_label, indices=None, startNode = None, max_depth=-1):
 		"""
 		train a certain part of the tree starting with the given startNode based on a subset of the data indicated by the indices array
 		
@@ -345,8 +357,8 @@ class DecisionTree:
 		if indices:
 			data=data[indices]
 		#Start the training at the root node
-		startNode.trainNode(data, attributes, class_label)
-		
+		startNode.trainNode(data, attributes, class_label, indices, max_depth)
+
 							
 	def get_classLabel(self, dataset):
 		"""
@@ -392,10 +404,10 @@ def splitData(data, class_label, seed, ratio):
 	return split_list
 
 
-def get_accuracy(class_label, test, train, attributes):
+def get_accuracy(class_label, test, train, attributes, maxD = -1):
 	
 	tree = DecisionTree()
-	tree.trainModel(train, attributes, class_label)
+	tree.trainModel(train, attributes, class_label, maxD)
 
 	#calculates accuracy
 	counter = 0
@@ -410,7 +422,7 @@ def get_accuracy(class_label, test, train, attributes):
 
 	
 
-def task1(data, class_label, seed, ratio, attributes): 
+def task1(data, class_label, seed, ratio, attributes, maxD = -1): 
 	
 	train, test = splitData(data, class_label, seed, ratio)
 
@@ -421,9 +433,9 @@ def task1(data, class_label, seed, ratio, attributes):
 	train = np.array(train)
 	
 	
-	return get_accuracy(class_label, test, train, attributes)
+	return get_accuracy(class_label, test, train, attributes, maxD = -1)
 
-def task2(data, class_label, ratio, attributes, n):
+def task2(data, class_label, ratio, attributes, n, maxD = -1):
 	
 	masterseed = 42
 	random.seed(masterseed)
@@ -431,20 +443,25 @@ def task2(data, class_label, ratio, attributes, n):
 	accuracies = []
 	
 	for i in seeed:
-		accuracies.append(task1(data, class_label, i, ratio, attributes))
+		accuracies.append(task1(data, class_label, i, ratio, attributes, maxD))
 	
 	print("mean: " + str(np.mean(accuracies)))
 	print("std: " + str(np.std(accuracies)))
 
-def task3(data, class_label, attributes):
+def task3(data, class_label, attributes, maxD = -1):
 	
 	ratios = [ 0.5, 2/3, 0.75, 0.9 ]
 	
 	for i in ratios:
 		print("\nRatio: " + str(i))
-		task2(data, class_label, i, attributes, 10)
+		task2(data, class_label, i, attributes, 10, maxD)
+
+def task5(data, class_label, attributes):
 	
-	
+	maxDs = [ 1, 3, 5, -1 ]
+	for i in maxDs:
+		print ("\nMax Depth: " + str(i)) 
+		task3(data, class_label, attributes, i)
 	
 
 path = 'car.arff'
@@ -484,4 +501,5 @@ data = np.array(data)
 
 #task1(data, class_label, 23, 0.5, attributes)
 #task2(data, class_label, 0.25, attributes, 10)
-task3(data, class_label, attributes)
+#task3(data, class_label, attributes)
+task5(data, class_label, attributes)
