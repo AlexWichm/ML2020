@@ -505,3 +505,11 @@ data = np.array(data)
 #task2(data, class_label, 0.25, attributes, 10)
 #task3(data, class_label, attributes)
 task5(data, class_label, attributes)
+
+'''
+Results:
+What we generally see is that with higher ratio between training and test data the mean accuracy seems to 
+slightly improve but only by 0.017 at most. The more significant improvement can be seen with increase of 
+maximum depth which would suggest that just limiting the tree depth might have small benefits in preventing 
+overfitting but the benefits of having a more precise model outweigh those.
+'''
