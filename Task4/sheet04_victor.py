@@ -15,7 +15,6 @@ warnings.filterwarnings("ignore")
 def parser(path):
     """
     function which parses the data from an arff file
-
     @param path: string containig the path to file
 
     @return array containing the data
